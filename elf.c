@@ -42,6 +42,54 @@ Elf_ErrNo Elf_validate_elf_header(Elf32_Ehdr * elf_hdr)
     return Elf_OK;
 }
 
+char * Elf_describe_header(Elf32_Ehdr * hdr) {
+    char * e_ident = hdr->e_ident;
+
+    printf("ELF Header\n");
+
+    char mag[5] = { "\0" };
+    strncpy(mag, e_ident, sizeof(mag) - 1);
+    printf("Magic number: %s\n", mag);
+
+    char * capacity = Elf_describe_ei_class(e_ident[EI_CLASS]);
+    printf("Capacity: %s\n", capacity);
+
+    char * endianess = Elf_describe_ei_data(e_ident[EI_DATA]);  
+    printf("Endianess: %s\n", endianess);
+
+    printf("Version: %d\n", e_ident[EI_VERSION]);
+
+    char * type = Elf_describe_e_type(hdr->e_type);
+    printf("Type: %s\n", type);
+
+    char * machine = Elf_describe_e_machine(hdr->e_machine);
+    printf("Machine: %s\n", machine);
+
+    printf("Version: %d\n", hdr->e_version);
+
+    printf("Entry: 0x%x\n", hdr->e_entry);
+
+    printf("Program header offset: 0x%x\n", hdr->e_phoff);
+
+    printf("Section header table offset: 0x%x\n", hdr->e_shoff);
+
+    printf("Flags: %x\n", hdr->e_flags);
+
+    printf("ELF Size: %d bytes\n", hdr->e_ehsize);
+
+    printf("ELF Program File Header Entry Size: %d bytes\n", hdr->e_phentsize);
+
+    printf("ELF Program File No. Entries: %d\n", hdr->e_phnum);
+
+    printf("Section Header Size: %d bytes\n", hdr->e_shentsize);
+
+    printf("Section Header No. Entries: %d\n", hdr->e_shnum);
+
+    printf("Section Name String Table Index: %d\n", hdr->e_shstrndx);
+
+    return "";
+}
+
 
 char * Elf_describe_e_type(Elf32_Half e_type) {
     switch (e_type) {
@@ -63,6 +111,7 @@ char * Elf_describe_e_type(Elf32_Half e_type) {
 
     return "Unknown";
 }
+
 
 char * Elf_describe_e_machine(Elf32_Half e_machine) {
     switch (e_machine) {
@@ -87,6 +136,7 @@ char * Elf_describe_e_machine(Elf32_Half e_machine) {
     }
 }
 
+
 char * Elf_describe_ei_class(uint8_t ei_class) {
     switch (ei_class) {
         case ELFCLASSNONE:
@@ -95,6 +145,20 @@ char * Elf_describe_ei_class(uint8_t ei_class) {
             return "32-bit objects";
         case ELFCLASS64:
             return "64-bit objects";
+        default:
+            return "Unknown";
+    }
+}
+
+
+char * Elf_describe_ei_data(uint8_t ei_data) {
+    switch (ei_data) {
+        case ELFDATANONE:
+            return "Invalid data encoding";
+        case ELFDATA2LSB:
+            return "Little-endian";
+        case ELFDATA2MSB:
+            return "Big-endian";
         default:
             return "Unknown";
     }
