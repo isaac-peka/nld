@@ -3,7 +3,7 @@
 #include "elftype.h"
 
 #define Elf_OK              0
-#define Elf_INVALID_HDR     1
+#define Elf_INVALID_MAG     1
 #define Elf_INVALID_ARCH    2
 
 typedef uint8_t Elf_ErrNo;

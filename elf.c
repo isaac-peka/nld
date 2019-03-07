@@ -28,7 +28,7 @@ Elf_ErrNo Elf_validate_elf_header(Elf32_Ehdr * elf_hdr)
     char * e_ident = elf_hdr->e_ident;
 
     if (strncmp(e_ident, "\x7f""ELF", 4) != 0) {
-        return Elf_INVALID_HDR;
+        return Elf_INVALID_MAG;
     }
 
     // for now we only support x86 32
