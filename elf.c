@@ -23,8 +23,7 @@ Elf32_Ehdr * Elf_read_elf_header(int fd) {
 }
 
 
-Elf_ErrNo Elf_validate_elf_header(Elf32_Ehdr * elf_hdr) 
-{
+Elf_ErrNo Elf_validate_elf_header(Elf32_Ehdr * elf_hdr) {
     char * e_ident = elf_hdr->e_ident;
 
     if (strncmp(e_ident, "\x7f""ELF", 4) != 0) {
@@ -41,6 +40,7 @@ Elf_ErrNo Elf_validate_elf_header(Elf32_Ehdr * elf_hdr)
 
     return Elf_OK;
 }
+
 
 char * Elf_describe_header(Elf32_Ehdr * hdr) {
     char * e_ident = hdr->e_ident;
