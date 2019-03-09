@@ -1,6 +1,6 @@
 #pragma once
 
-#include "elftype.h"
+#include "elfspec.h"
 
 #define Elf_OK              0
 #define Elf_INVALID_MAG     1
