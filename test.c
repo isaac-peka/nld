@@ -8,17 +8,17 @@
 
 
 void main(int argc, char ** argv) {
-	if (argc < 2) {
-		puts("Usage: test [path]");
-		exit(1);
-	}
+    if (argc < 2) {
+        puts("Usage: test [path]");
+        exit(1);
+    }
 
     char * path = argv[1];
 
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
-    	perror("open: ");
-    	exit(1);
+        perror("open: ");
+        exit(1);
     }
 
 
