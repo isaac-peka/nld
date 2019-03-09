@@ -23,7 +23,7 @@ void * realloc_free_on_fail(void * ptr, size_t size) {
 * Underlyingly the safe_strcat reallocs space for the concatenated
 * string.
 *
-* The pointer to at *destptr will be replaced with the new address,
+* The pointer at *destptr will be replaced with the new address,
 * which means it can override with NULL if unsuccessful in the case
 * of memory errors.
 *
@@ -50,7 +50,7 @@ char * safe_strcatp(char ** destptr, char * src) {
 * which must be heap-allocated. Underlyingly the safe_strcat reallocs
 * space for the concatenated string.
 *
-* The pointer to at *destptr will be replaced with the new address,
+* The pointer at *destptr will be replaced with the new address,
 * which means it can override with NULL if unsuccessful in the case
 * of memory errors.
 *
