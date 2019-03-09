@@ -16,7 +16,7 @@ Elf32_Ehdr * Elf_read_header(int fd) {
         return NULL;
     }
 
-    if (read(fd, elf_hdr, sizeof(elf_hdr)) == -1) {
+    if (read(fd, elf_hdr, sizeof(Elf32_Ehdr)) == -1) {
         free(elf_hdr);
         return NULL;
     }
@@ -51,7 +51,7 @@ void Elf_print_header(int fd, Elf32_Ehdr * hdr) {
     dprintf(fd, "ELF Header\n");
 
     char mag[5] = { "\0" };
-    strncpy(mag, e_ident, strlen(mag));
+    strncpy(mag, e_ident, 4);
     dprintf(fd, "Magic number: %s\n", mag);
 
     char * capacity = Elf_describe_ei_class(e_ident[EI_CLASS]);
@@ -72,7 +72,7 @@ void Elf_print_header(int fd, Elf32_Ehdr * hdr) {
     dprintf(fd, "Program Header Offset: 0x%x\n", hdr->e_phoff);
     dprintf(fd, "Section Header Table Offset: 0x%x\n", hdr->e_shoff);
     dprintf(fd, "Flags: %x\n", hdr->e_flags);
-    dprintf(fd, "ELF Size: %d bytes\n", hdr->e_ehsize);
+    dprintf(fd, "ELF Header Size: %d bytes\n", hdr->e_ehsize);
     dprintf(fd, "ELF Program File Header Entry Size: %d bytes\n", hdr->e_phentsize);
     dprintf(fd, "ELF Program File No. Entries: %d\n", hdr->e_phnum);
     dprintf(fd, "Section Header Size: %d bytes\n", hdr->e_shentsize);
