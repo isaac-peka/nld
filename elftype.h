@@ -7,7 +7,7 @@
 typedef uint32_t    Elf32_Addr;     // unsigned program address
 typedef uint16_t    Elf32_Half;     // unsigned medium integer
 typedef uint32_t    Elf32_Off;      // unsigned file offset
-typedef int32_t     Elf32_Sword;    // signed large integer 
+typedef int32_t     Elf32_Sword;    // signed large integer
 typedef uint32_t    Elf32_Word;     // unsigned large integer
 
 typedef struct {
@@ -42,7 +42,7 @@ typedef struct {
 #define EM_NONE     0
 #define EM_M32      1
 #define EM_SPARC    2
-#define EM_386      3  
+#define EM_386      3
 #define EM_68K      4
 #define EM_88K      5
 #define EM_860      7

@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include "elf.h"
 #include "elftype.h"
+#include "utils.h"
 
 
 Elf32_Ehdr * Elf_read_elf_header(int fd) {
@@ -13,6 +14,9 @@ Elf32_Ehdr * Elf_read_elf_header(int fd) {
     }
 
     Elf32_Ehdr * elf_hdr = calloc(1, sizeof(Elf32_Ehdr));
+    if (elf_hdr == NULL) {
+        return NULL;
+    }
 
     if (read(fd, elf_hdr, sizeof(elf_hdr)) == -1) {
         free(elf_hdr);
@@ -32,7 +36,7 @@ Elf_ErrNo Elf_validate_elf_header(Elf32_Ehdr * elf_hdr) {
 
     // for now we only support x86 32
 
-    if (e_ident[EI_CLASS] != ELFCLASS32 && 
+    if (e_ident[EI_CLASS] != ELFCLASS32 &&
             e_ident[EI_DATA] != ELFDATA2LSB) {
 
         return Elf_INVALID_ARCH;
@@ -45,49 +49,41 @@ Elf_ErrNo Elf_validate_elf_header(Elf32_Ehdr * elf_hdr) {
 char * Elf_describe_header(Elf32_Ehdr * hdr) {
     char * e_ident = hdr->e_ident;
 
-    printf("ELF Header\n");
+    char header[] = "ELF Header\n";
+    char * dest = malloc(sizeof(header));
+    safe_strcatp(&dest, header);
 
     char mag[5] = { "\0" };
-    strncpy(mag, e_ident, sizeof(mag) - 1);
-    printf("Magic number: %s\n", mag);
+    strncpy(mag, e_ident, strlen(mag));
+    append_asprintf(&dest, "Magic number: %s\n", mag);
 
     char * capacity = Elf_describe_ei_class(e_ident[EI_CLASS]);
-    printf("Capacity: %s\n", capacity);
+    append_asprintf(&dest, "Capacity: %s\n", capacity);
 
-    char * endianess = Elf_describe_ei_data(e_ident[EI_DATA]);  
-    printf("Endianess: %s\n", endianess);
+    char * endianness = Elf_describe_ei_data(e_ident[EI_DATA]);
+    append_asprintf(&dest, "Endianness: %s\n", endianness);
 
-    printf("Version: %d\n", e_ident[EI_VERSION]);
+    append_asprintf(&dest, "Version: %s\n", e_ident[EI_VERSION]);
 
     char * type = Elf_describe_e_type(hdr->e_type);
-    printf("Type: %s\n", type);
+    append_asprintf(&dest, "Type: %s\n", type);
 
     char * machine = Elf_describe_e_machine(hdr->e_machine);
-    printf("Machine: %s\n", machine);
+    append_asprintf(&dest, "Machine: %s\n", machine);
 
-    printf("Version: %d\n", hdr->e_version);
+    append_asprintf(&dest, "Version: %d\n", hdr->e_version);
+    append_asprintf(&dest, "Entry: 0x%x\n", hdr->e_entry);
+    append_asprintf(&dest, "Program Header Offset: 0x%x\n", hdr->e_phoff);
+    append_asprintf(&dest, "Section Header Table Offset: 0x%x\n", hdr->e_shoff);
+    append_asprintf(&dest, "Flags: %x\n", hdr->e_flags);
+    append_asprintf(&dest, "ELF Size: %d bytes\n", hdr->e_ehsize);
+    append_asprintf(&dest, "ELF Program File Header Entry Size: %d bytes\n", hdr->e_phentsize);
+    append_asprintf(&dest, "ELF Program File No. Entries: %d\n", hdr->e_phnum);
+    append_asprintf(&dest, "Section Header Size: %d bytes\n", hdr->e_shentsize);
+    append_asprintf(&dest, "Section Header No. Entries: %d\n", hdr->e_shnum);
+    append_asprintf(&dest, "Section Name String Table Index: %d\n", hdr->e_shstrndx);
 
-    printf("Entry: 0x%x\n", hdr->e_entry);
-
-    printf("Program header offset: 0x%x\n", hdr->e_phoff);
-
-    printf("Section header table offset: 0x%x\n", hdr->e_shoff);
-
-    printf("Flags: %x\n", hdr->e_flags);
-
-    printf("ELF Size: %d bytes\n", hdr->e_ehsize);
-
-    printf("ELF Program File Header Entry Size: %d bytes\n", hdr->e_phentsize);
-
-    printf("ELF Program File No. Entries: %d\n", hdr->e_phnum);
-
-    printf("Section Header Size: %d bytes\n", hdr->e_shentsize);
-
-    printf("Section Header No. Entries: %d\n", hdr->e_shnum);
-
-    printf("Section Name String Table Index: %d\n", hdr->e_shstrndx);
-
-    return "";
+    return dest;
 }
 
 
