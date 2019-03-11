@@ -148,7 +148,7 @@ typedef struct {
 
 #define ELF32_ST_BIND(i)        ((i) >> 4)
 #define ELF32_ST_TYPE(i)        ((i) & 0xf)
-#define ELF32_ST_INFO(b, t)     (((b) << 4))+((t) & 0xf)
+#define ELF32_ST_INFO(b, t)     (((b) << 4)) + ((t) & 0xf)
 
 // st_bind
 
@@ -167,3 +167,39 @@ typedef struct {
 #define STT_FILE        4
 #define STT_LOPROC      13
 #define STT_HIPROC      15
+
+
+/* Relocation */
+
+
+typedef struct {
+    Elf32_Addr      r_offset;
+    Elf32_Word      r_info;
+} Elf32_Rel;
+
+
+typedef struct {
+    Elf32_Addr      r_offset;
+    Elf32_Word      r_info;
+    Elf32_Sword     r_addend;
+} Elf32_Rela;
+
+// r_info
+
+#define ELF32_R_SYM(i)      ((i) >> 8)
+#define ELF32_R_TYPE(i)     ((uint8_t)(i))
+#define ELF32_R_INFO(s, t)  (((s) << 8) + (uint8_t)(t))
+
+// relocation types
+
+#define R_386_NONE      0
+#define R_386_32        1
+#define R_386_PC32      2
+#define R_386_GOT32     3   // computes the distance from GOT base to GOT entry
+#define R_386_PLT32     4   // compute PLT table entry
+#define R_386_COPY      5   // dynamic linking, offset for writable secton
+#define R_386_GLOB_DAT  6   // set GOT entry to address of symbol
+#define R_386_JMP_SLOT  7   // dynamic linking, offset for PLT
+#define R_386_RELATIVE  8   // dynamic linking, location within SO for rel address
+#define R_386_GOTOFF    9   // compute diff between symbol value and GOT address
+#define R_386_GOTPC     10  // similar to R_386_PC32, except use GOT in calculation
