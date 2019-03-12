@@ -33,7 +33,6 @@ typedef struct {
 
 
 Elf_State * Elf_open(char * pathname);
-
 void Elf_free_state(Elf_State * state);
 
 
