@@ -8,7 +8,6 @@
 #include "elf.h"
 
 
-
 Elf_State * Elf_open(char * pathname) {
     int fd = open(pathname, O_RDONLY);
 
@@ -24,6 +23,7 @@ Elf_State * Elf_open(char * pathname) {
 void Elf_free_state(Elf_State * state) {
     free(state->s_ehdr);
     free(state->s_shdrs);
+    free(state->s_shstrtab);
     free(state);
 }
 

@@ -47,7 +47,9 @@ void main(int argc, char ** argv) {
 
     for (size_t i = 0; i < ehdr->e_shnum; i++) {
         Elf32_Shdr * shdr = &state->s_shdrs[i];
-        Elf_print_shdr(1, shdr);
+        char * name = &state->s_shstrtab[shdr->sh_name];
+
+        printf("Section: %s\n", name);
     }
 
     close(fd);
