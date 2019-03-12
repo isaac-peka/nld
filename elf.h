@@ -14,6 +14,7 @@ typedef uint16_t Elf_ErrNo;
 #define Elf_NEED_EHDR           100
 #define Elf_NEED_SHDRS          101
 #define Elf_NEED_SHDR           102
+#define Elf_NEED_SHSTRTAB       103
 #define Elf_EHDR_BAD_MAG        200
 #define Elf_EHDR_BAD_ARCH       201
 #define Elf_EHDR_BAD_SHOFF      202
@@ -29,6 +30,7 @@ typedef struct {
     int             s_fd;
     Elf32_Ehdr *    s_ehdr;
     Elf32_Shdr *    s_shdrs;
+    char *          s_shstrtab;
 } Elf_State;
 
 
@@ -41,7 +43,7 @@ void Elf_free_state(Elf_State * state);
 
 Elf_ErrNo Elf_read_ehdr(Elf_State *);
 Elf_ErrNo Elf_read_shdrs(Elf_State *);
-Elf_ErrNo Elf_read_string_table(Elf_State *);
+Elf_ErrNo Elf_read_shstrtab(Elf_State *);
 
 
 /* Display utils */

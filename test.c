@@ -26,13 +26,19 @@ void main(int argc, char ** argv) {
 
     errno = Elf_read_ehdr(state);
     if (errno != Elf_OK) {
-        Elf_print_error(1, "Error reading header:", errno);
+        Elf_print_error(1, "Error reading ehdr:", errno);
         exit(1);
     }
 
     errno = Elf_read_shdrs(state);
     if (errno != Elf_OK) {
-        Elf_print_error(1, "Error reading section headers:", errno);
+        Elf_print_error(1, "Error reading shdrs:", errno);
+        exit(1);
+    }
+
+    errno = Elf_read_shstrtab(state);
+    if (errno != Elf_OK) {
+        Elf_print_error(1, "Error reading shstrtab:", errno);
         exit(1);
     }
 

@@ -69,6 +69,11 @@ Elf_ErrNo Elf_read_ehdr(Elf_State * state) {
 
 Elf_ErrNo Elf_read_shdrs(Elf_State * state) {
     Elf32_Ehdr * ehdr = state->s_ehdr;
+
+    if (ehdr == NULL) {
+        return Elf_NEED_EHDR;
+    }
+
     Elf32_Off shoff = ehdr->e_shoff;
 
     if (shoff == 0) {
@@ -77,7 +82,7 @@ Elf_ErrNo Elf_read_shdrs(Elf_State * state) {
 
     int fd = state->s_fd;
 
-    if (lseek(fd, shoff, SEEK_SET) == -1) {
+    if (lseek(fd, shoff, SEEK_SET) != shoff) {
         return Elf_BAD_READ;
     }
 
@@ -85,8 +90,8 @@ Elf_ErrNo Elf_read_shdrs(Elf_State * state) {
         return Elf_EHDR_BAD_SHENTSIZE;
     }
 
-    size_t shsize = ehdr->e_shnum * ehdr->e_shentsize;
-    Elf32_Shdr * shdrs = calloc(ehdr->e_shnum, ehdr->e_shentsize);
+    Elf32_Word shsize = ehdr->e_shnum * ehdr->e_shentsize;
+    Elf32_Shdr * shdrs = malloc(shsize);
 
     if (shdrs == NULL) {
         return Elf_BAD_ALLOC;
@@ -102,7 +107,55 @@ Elf_ErrNo Elf_read_shdrs(Elf_State * state) {
 }
 
 
-Elf_ErrNo Elf_read_string_table(Elf_State * state) {
+Elf_ErrNo Elf_read_shstrtab(Elf_State * state) {
+    Elf32_Ehdr * ehdr = state->s_ehdr;
+    if (ehdr == NULL) {
+        return Elf_NEED_EHDR;
+    }
+
+    Elf32_Shdr * shdrs = state->s_shdrs;
+    if (shdrs == NULL) {
+        return Elf_NEED_SHDRS;
+    }
+
+    // Find the section header string table
+
+    Elf32_Shdr * strtab_hdr = NULL;
+    for (Elf32_Word i = 0; i < ehdr->e_shnum; i++) {
+        Elf32_Shdr * shdr = &state->s_shdrs[i];
+
+        if (shdr->sh_type == SHT_STRTAB &&
+            shdr->sh_flags == 0) {
+
+            strtab_hdr = shdr;
+            break;
+        }
+    }
+
+    // Not found
+
+    if (strtab_hdr == NULL) {
+        return Elf_NEED_SHSTRTAB;
+    }
+
+    // Read it in, make sure its the correct amount or fail
+
+    int fd = state->s_fd;
+    Elf32_Off sh_offset = strtab_hdr->sh_offset;
+
+    if (lseek(fd, sh_offset, SEEK_SET) != sh_offset) {
+        return Elf_BAD_READ;
+    }
+
+    Elf32_Word sh_size = strtab_hdr->sh_size;
+    uint8_t * shstrtab = malloc(sh_size);
+
+    if (read(fd, shstrtab, sh_size) != sh_size) {
+        free(shstrtab);
+        return Elf_BAD_READ;
+    }
+
+    state->s_shstrtab = shstrtab;
     return Elf_OK;
 }
 
