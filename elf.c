@@ -92,7 +92,7 @@ Elf_ErrNo Elf_read_shdrs(Elf_State * state) {
         return Elf_BAD_ALLOC;
     }
 
-    if (read(fd, shdrs, sizeof(shsize)) != shsize) {
+    if (read(fd, shdrs, shsize) != shsize) {
         free(shdrs);
         return Elf_BAD_READ;
     }
