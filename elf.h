@@ -8,16 +8,16 @@
 
 typedef uint16_t Elf_ErrNo;
 
-#define Elf_OK              	0
-#define Elf_BAD_READ			1
-#define Elf_BAD_ALLOC			2
-#define Elf_NEED_EHDR			100
-#define Elf_NEED_SHDRS			101
-#define Elf_NEED_SHDR 			102
-#define Elf_EHDR_BAD_MAG	    200
-#define Elf_EHDR_BAD_ARCH   	201
-#define Elf_EHDR_BAD_SHOFF		202
-#define Elf_EHDR_BAD_SHENTSIZE	203
+#define Elf_OK                  0
+#define Elf_BAD_READ            1
+#define Elf_BAD_ALLOC           2
+#define Elf_NEED_EHDR           100
+#define Elf_NEED_SHDRS          101
+#define Elf_NEED_SHDR           102
+#define Elf_EHDR_BAD_MAG        200
+#define Elf_EHDR_BAD_ARCH       201
+#define Elf_EHDR_BAD_SHOFF      202
+#define Elf_EHDR_BAD_SHENTSIZE  203
 
 void Elf_print_error(int fd, char * prefix, Elf_ErrNo errno);
 
@@ -26,9 +26,9 @@ void Elf_print_error(int fd, char * prefix, Elf_ErrNo errno);
 
 
 typedef struct {
-	int				s_fd;
-	Elf32_Ehdr * 	s_ehdr;
-	Elf32_Shdr *	s_shdrs;
+    int             s_fd;
+    Elf32_Ehdr *    s_ehdr;
+    Elf32_Shdr *    s_shdrs;
 } Elf_State;
 
 

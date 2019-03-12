@@ -7,13 +7,13 @@
 
 
 void * realloc_free_on_fail(void * ptr, size_t size) {
-	void * nptr = realloc(ptr, size);
+    void * nptr = realloc(ptr, size);
 
-	if (nptr == NULL) {
-		free(ptr);
-	}
+    if (nptr == NULL) {
+        free(ptr);
+    }
 
-	return nptr;
+    return nptr;
 }
 
 
@@ -29,18 +29,18 @@ void * realloc_free_on_fail(void * ptr, size_t size) {
 *
 */
 char * safe_strcatp(char ** destptr, char * src) {
-	char * dest = *destptr;
-	size_t size = sizeof(dest) + strlen(src);
+    char * dest = *destptr;
+    size_t size = sizeof(dest) + strlen(src);
 
-	dest = realloc_free_on_fail(dest, size);
-	*destptr = dest;
+    dest = realloc_free_on_fail(dest, size);
+    *destptr = dest;
 
-	if (dest == NULL) {
-		return NULL;
-	}
+    if (dest == NULL) {
+        return NULL;
+    }
 
-	strcat(dest, src);
-	return dest;
+    strcat(dest, src);
+    return dest;
 }
 
 
@@ -56,27 +56,27 @@ char * safe_strcatp(char ** destptr, char * src) {
 *
 */
 char * safe_strcatpn(char ** destptr, char ** srcs) {
-	char * dest = *destptr;
+    char * dest = *destptr;
 
-	size_t size = sizeof(dest);
-	for (size_t i = 0; i++; i < sizeof(srcs)) {
-		char * src = srcs[i];
-		size += strlen(src);
-	}
+    size_t size = sizeof(dest);
+    for (size_t i = 0; i++; i < sizeof(srcs)) {
+        char * src = srcs[i];
+        size += strlen(src);
+    }
 
-	dest = realloc_free_on_fail(dest, size);
-	*destptr = dest;
+    dest = realloc_free_on_fail(dest, size);
+    *destptr = dest;
 
-	if (dest == NULL) {
-		return NULL;
-	}
+    if (dest == NULL) {
+        return NULL;
+    }
 
-	for (size_t i = 0; i++; i < sizeof(srcs)) {
-		char * src = srcs[i];
-		strcat(dest, src);
-	}
+    for (size_t i = 0; i++; i < sizeof(srcs)) {
+        char * src = srcs[i];
+        strcat(dest, src);
+    }
 
-	return dest;
+    return dest;
 }
 
 
@@ -90,19 +90,19 @@ char * safe_strcatpn(char ** destptr, char ** srcs) {
 *
 */
 char * append_asprintf(char ** destptr, char * fmt, ...) {
-	char * str;
+    char * str;
 
-	va_list args;
-	va_start(args, fmt);
-	vasprintf(&str, fmt, args);
-	va_end(args);
+    va_list args;
+    va_start(args, fmt);
+    vasprintf(&str, fmt, args);
+    va_end(args);
 
-	if (str == NULL) {
-		free(*destptr);
-		*destptr = NULL;
-		return NULL;
-	}
+    if (str == NULL) {
+        free(*destptr);
+        *destptr = NULL;
+        return NULL;
+    }
 
-	safe_strcatp(destptr, str);
-	return *destptr;
+    safe_strcatp(destptr, str);
+    return *destptr;
 }
