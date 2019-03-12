@@ -13,19 +13,36 @@ void main(int argc, char ** argv) {
         exit(1);
     }
 
-    char * path = argv[1];
-
-    int fd = open(path, O_RDONLY);
+    int fd = open(argv[1], O_RDONLY);
     if (fd == -1) {
-        perror("open: ");
+        perror("open:");
+        exit(1);
+    }
+
+    Elf_State * state = calloc(1, sizeof(Elf_State));
+    state->s_fd = fd;
+
+    Elf_ErrNo errno;
+
+    errno = Elf_read_ehdr(state);
+    if (errno != Elf_OK) {
+        Elf_print_error(1, "Error reading header:", errno);
+        exit(1);
+    }
+
+    errno = Elf_read_shdrs(state);
+    if (errno != Elf_OK) {
+        Elf_print_error(1, "Error reading section headers:", errno);
         exit(1);
     }
 
 
-    Elf32_Ehdr * hdr = Elf_read_header(fd);
+    Elf32_Ehdr * ehdr = state->s_ehdr;
 
-    Elf_print_header(1, hdr);
+    for (size_t i = 0; i < ehdr->e_shnum; i++) {
+        Elf32_Shdr * shdr = &state->s_shdrs[i];
+        Elf_print_shdr(1, shdr);
+    }
 
-    free(hdr);
     close(fd);
 }

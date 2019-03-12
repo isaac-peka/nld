@@ -3,48 +3,113 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "elf.h"
 
 
-Elf32_Ehdr * Elf_read_header(int fd) {
-    if (lseek(fd, 0, SEEK_SET) == -1) {
+
+Elf_State * Elf_open(char * pathname) {
+    int fd = open(pathname, O_RDONLY);
+
+    if (fd == -1) {
         return NULL;
     }
 
-    Elf32_Ehdr * elf_hdr = calloc(1, sizeof(Elf32_Ehdr));
-    if (elf_hdr == NULL) {
-        return NULL;
-    }
-
-    if (read(fd, elf_hdr, sizeof(Elf32_Ehdr)) == -1) {
-        free(elf_hdr);
-        return NULL;
-    }
-
-    return elf_hdr;
+    Elf_State * state = calloc(1, sizeof(Elf_State));
+    return state;
 }
 
 
-Elf_ErrNo Elf_validate_header(Elf32_Ehdr * elf_hdr) {
-    char * e_ident = elf_hdr->e_ident;
+void Elf_free_state(Elf_State * state) {
+    free(state->s_ehdr);
+    free(state->s_shdrs);
+    free(state);
+}
 
-    if (strncmp(e_ident, "\x7f""ELF", 4) != 0) {
-        return Elf_INVALID_MAG;
+
+Elf_ErrNo Elf_read_ehdr(Elf_State * state) {
+    Elf_ErrNo errno;
+
+    int fd = state->s_fd;
+
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+        return Elf_BAD_READ;
     }
 
-    // for now we only support x86 32
+    Elf32_Ehdr * ehdr = malloc(sizeof(Elf32_Ehdr));
 
-    if (e_ident[EI_CLASS] != ELFCLASS32 &&
-            e_ident[EI_DATA] != ELFDATA2LSB) {
-
-        return Elf_INVALID_ARCH;
+    if (ehdr == NULL) {
+        return Elf_BAD_ALLOC;
     }
 
+    if (read(fd, ehdr, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr)) {
+        free(ehdr);
+        return Elf_BAD_READ;
+    }
+
+    // Validate the elf header looks alright
+
+    if (strncmp(ehdr->e_ident, "\x7f""ELF", 4) != 0) {
+        free(ehdr);
+        return Elf_EHDR_BAD_MAG;
+    }
+
+    // for now we only support x86 32b
+
+    if (ehdr->e_ident[EI_CLASS] != ELFCLASS32 &&
+        ehdr->e_ident[EI_DATA] != ELFDATA2LSB) {
+
+        free(ehdr);
+        return Elf_EHDR_BAD_ARCH;
+    }
+
+    state->s_ehdr = ehdr;
     return Elf_OK;
 }
 
 
-void Elf_print_header(int fd, Elf32_Ehdr * hdr) {
+Elf_ErrNo Elf_read_shdrs(Elf_State * state) {
+    Elf32_Ehdr * ehdr = state->s_ehdr;
+    Elf32_Off shoff = ehdr->e_shoff;
+
+    if (shoff == 0) {
+        return Elf_EHDR_BAD_SHOFF;
+    }
+
+    int fd = state->s_fd;
+
+    if (lseek(fd, shoff, SEEK_SET) == -1) {
+        return Elf_BAD_READ;
+    }
+
+    if (ehdr->e_shentsize != sizeof(Elf32_Shdr)) {
+        return Elf_EHDR_BAD_SHENTSIZE;
+    }
+
+    size_t shsize = ehdr->e_shnum * ehdr->e_shentsize;
+    Elf32_Shdr * shdrs = calloc(ehdr->e_shnum, ehdr->e_shentsize);
+
+    if (shdrs == NULL) {
+        return Elf_BAD_ALLOC;
+    }
+
+    if (read(fd, shdrs, sizeof(shsize)) != shsize) {
+        free(shdrs);
+        return Elf_BAD_READ;
+    }
+
+    state->s_shdrs = shdrs;
+    return Elf_OK;
+}
+
+
+Elf_ErrNo Elf_read_string_table(Elf_State * state) {
+    return Elf_OK;
+}
+
+
+void Elf_print_ehdr(int fd, Elf32_Ehdr * hdr) {
     char * e_ident = hdr->e_ident;
 
     char header[] = "ELF Header\n";
@@ -66,7 +131,6 @@ void Elf_print_header(int fd, Elf32_Ehdr * hdr) {
 
     char * machine = Elf_describe_e_machine(hdr->e_machine);
     dprintf(fd, "Machine: %s\n", machine);
-
     dprintf(fd, "Version: %d\n", hdr->e_version);
     dprintf(fd, "Entry: 0x%x\n", hdr->e_entry);
     dprintf(fd, "Program Header Offset: 0x%x\n", hdr->e_phoff);
@@ -78,6 +142,11 @@ void Elf_print_header(int fd, Elf32_Ehdr * hdr) {
     dprintf(fd, "Section Header Size: %d bytes\n", hdr->e_shentsize);
     dprintf(fd, "Section Header No. Entries: %d\n", hdr->e_shnum);
     dprintf(fd, "Section Name String Table Index: %d\n", hdr->e_shstrndx);
+}
+
+
+void Elf_print_shdr(int fd, Elf32_Shdr * shdr) {
+    dprintf(fd, "Section Name: %d\n", shdr->sh_name);
 }
 
 
@@ -152,4 +221,9 @@ char * Elf_describe_ei_data(uint8_t ei_data) {
         default:
             return "Unknown";
     }
+}
+
+
+void Elf_print_error(int fd, char * prefix, Elf_ErrNo errno) {
+    dprintf(fd, "%s %d\n", prefix, errno);
 }
