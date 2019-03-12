@@ -29,8 +29,6 @@ void Elf_free_state(Elf_State * state) {
 
 
 Elf_ErrNo Elf_read_ehdr(Elf_State * state) {
-    Elf_ErrNo errno;
-
     int fd = state->s_fd;
 
     if (lseek(fd, 0, SEEK_SET) == -1) {
