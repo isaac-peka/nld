@@ -29,8 +29,8 @@ void Elf_print_error(int fd, char * prefix, Elf_ErrNo errno);
 typedef struct {
     int             s_fd;
     Elf32_Ehdr *    s_ehdr;
+    Elf32_Shdr *    s_shstrtab;
     Elf32_Shdr *    s_shdrs;
-    char *          s_shstrtab;
 } Elf_State;
 
 

@@ -13,14 +13,11 @@ void main(int argc, char ** argv) {
         exit(1);
     }
 
-    int fd = open(argv[1], O_RDONLY);
-    if (fd == -1) {
+    Elf_State * state = Elf_open(argv[1]);
+    if (state == NULL) {
         perror("open:");
         exit(1);
     }
-
-    Elf_State * state = calloc(1, sizeof(Elf_State));
-    state->s_fd = fd;
 
     Elf_ErrNo errno;
 
@@ -42,15 +39,27 @@ void main(int argc, char ** argv) {
         exit(1);
     }
 
-
     Elf32_Ehdr * ehdr = state->s_ehdr;
+    Elf32_Shdr * shstrtab = state->s_shstrtab;
+
+    Elf_print_ehdr(1, ehdr);
+    putchar('\n');
+
+    Elf_print_shdr(1, shstrtab);
+    putchar('\n');
+
+    char * section_labels = malloc(shstrtab->sh_size);
+
+    lseek(state->s_fd, shstrtab->sh_offset, SEEK_SET);
+    read(state->s_fd, section_labels, shstrtab->sh_size);
 
     for (size_t i = 0; i < ehdr->e_shnum; i++) {
         Elf32_Shdr * shdr = &state->s_shdrs[i];
-        char * name = &state->s_shstrtab[shdr->sh_name];
 
-        printf("Section: %s\n", name);
+        char * section_name = section_labels + shdr->sh_name;
+
+        printf("Section %s\n", section_name);
+        Elf_print_shdr(1, shdr);
+        putchar('\n');
     }
-
-    close(fd);
 }
