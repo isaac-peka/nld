@@ -13,50 +13,39 @@ void main(int argc, char ** argv) {
         exit(1);
     }
 
-    Elf_State * state = Elf_open(argv[1]);
-    if (state == NULL) {
-        perror("open:");
+    int fd = open(argv[1], O_RDONLY);
+
+    if (fd == -1) {
+        perror("Bad open:");
         exit(1);
     }
 
-    Elf_ErrNo errno;
+    Elf_ErrNo err;
 
-    errno = Elf_read_ehdr(state);
-    if (errno != Elf_OK) {
-        Elf_print_error(1, "Error reading ehdr:", errno);
+    Elf32_Ehdr * ehdr = Elf_read_ehdr(fd, &err);
+    if (ehdr == NULL) {
+        Elf_print_error(1, "Error reading ehdr:", err);
         exit(1);
     }
 
-    errno = Elf_read_shdrs(state);
-    if (errno != Elf_OK) {
-        Elf_print_error(1, "Error reading shdrs:", errno);
+    Elf32_Shdr * shdrs = Elf_read_shdrs(fd, ehdr, &err);
+    if (ehdr == NULL) {
+        Elf_print_error(1, "Error reading shdrs:", err);
         exit(1);
     }
 
-    errno = Elf_read_shstrtab(state);
-    if (errno != Elf_OK) {
-        Elf_print_error(1, "Error reading shstrtab:", errno);
+    Elf32_Shdr * shstrtab = &shdrs[ehdr->e_shstrndx];
+
+    char * strtab = Elf_read_section(fd, shstrtab, &err);
+    if (strtab == NULL) {
+        Elf_print_error(1, "Error reading strtab:", err);
         exit(1);
     }
-
-    Elf32_Ehdr * ehdr = state->s_ehdr;
-    Elf32_Shdr * shstrtab = state->s_shstrtab;
-
-    Elf_print_ehdr(1, ehdr);
-    putchar('\n');
-
-    Elf_print_shdr(1, shstrtab);
-    putchar('\n');
-
-    char * section_labels = malloc(shstrtab->sh_size);
-
-    lseek(state->s_fd, shstrtab->sh_offset, SEEK_SET);
-    read(state->s_fd, section_labels, shstrtab->sh_size);
 
     for (size_t i = 0; i < ehdr->e_shnum; i++) {
-        Elf32_Shdr * shdr = &state->s_shdrs[i];
+        Elf32_Shdr * shdr = &shdrs[i];
 
-        char * section_name = section_labels + shdr->sh_name;
+        char * section_name = &strtab[shdr->sh_name];
 
         printf("Section %s\n", section_name);
         Elf_print_shdr(1, shdr);

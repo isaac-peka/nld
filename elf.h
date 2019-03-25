@@ -6,7 +6,7 @@
 /* Errors */
 
 
-typedef uint16_t Elf_ErrNo;
+typedef int Elf_ErrNo;
 
 #define Elf_OK                  0
 #define Elf_BAD_READ            1
@@ -23,27 +23,18 @@ typedef uint16_t Elf_ErrNo;
 void Elf_print_error(int fd, char * prefix, Elf_ErrNo errno);
 
 
-/* Combined state */
-
-
-typedef struct {
-    int             s_fd;
-    Elf32_Ehdr *    s_ehdr;
-    Elf32_Shdr *    s_shstrtab;
-    Elf32_Shdr *    s_shdrs;
-} Elf_State;
-
-
-Elf_State * Elf_open(char * pathname);
-void Elf_free_state(Elf_State * state);
-
-
 /* Headers */
 
 
-Elf_ErrNo Elf_read_ehdr(Elf_State *);
-Elf_ErrNo Elf_read_shdrs(Elf_State *);
-Elf_ErrNo Elf_read_shstrtab(Elf_State *);
+Elf32_Ehdr * Elf_read_ehdr(int fd, Elf_ErrNo *);
+Elf32_Shdr * Elf_read_shdrs(int fd, Elf32_Ehdr *, Elf_ErrNo *);
+Elf32_Shdr * Elf_read_shstrtab(int fd, Elf32_Ehdr *, Elf_ErrNo *);
+
+
+/* Sections */
+
+
+void * Elf_read_section(int fd, Elf32_Shdr *, Elf_ErrNo *);
 
 
 /* Display utils */

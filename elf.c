@@ -8,129 +8,124 @@
 #include "elf.h"
 
 
-Elf_State * Elf_open(char * pathname) {
-    int fd = open(pathname, O_RDONLY);
-
-    if (fd == -1) {
-        return NULL;
-    }
-
-    Elf_State * state = calloc(1, sizeof(Elf_State));
-    state->s_fd = fd;
-    return state;
-}
-
-
-void Elf_free_state(Elf_State * state) {
-    close(state->s_fd);
-    free(state->s_ehdr);
-    free(state->s_shdrs);
-    free(state->s_shstrtab);
-    free(state);
-}
-
-
-Elf_ErrNo Elf_read_ehdr(Elf_State * state) {
-    int fd = state->s_fd;
+Elf32_Ehdr * Elf_read_ehdr(int fd, Elf_ErrNo * errptr) {
+    Elf_ErrNo errno = Elf_OK;
+    Elf32_Ehdr * ehdr = NULL;
 
     if (lseek(fd, 0, SEEK_SET) == -1) {
-        return Elf_BAD_READ;
+        errno = Elf_BAD_READ;
+        goto CLEANUP;
     }
 
-    Elf32_Ehdr * ehdr = malloc(sizeof(Elf32_Ehdr));
+    ehdr = malloc(sizeof(Elf32_Ehdr));
 
     if (ehdr == NULL) {
-        return Elf_BAD_ALLOC;
+        errno = Elf_BAD_ALLOC;
+        goto CLEANUP;
     }
 
     if (read(fd, ehdr, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr)) {
-        free(ehdr);
-        return Elf_BAD_READ;
+        errno = Elf_BAD_READ;
+        goto CLEANUP;
     }
-
-    // Validate the elf header looks alright
 
     if (strncmp(ehdr->e_ident, "\x7f""ELF", 4) != 0) {
-        free(ehdr);
-        return Elf_EHDR_BAD_MAG;
+        errno = Elf_EHDR_BAD_MAG;
+        goto CLEANUP;
     }
 
-    // for now we only support x86 32b
+    // For now we only support x86 32b
 
     if (ehdr->e_ident[EI_CLASS] != ELFCLASS32 &&
         ehdr->e_ident[EI_DATA] != ELFDATA2LSB) {
 
-        free(ehdr);
-        return Elf_EHDR_BAD_ARCH;
+        errno = Elf_EHDR_BAD_ARCH;
+        goto CLEANUP;
     }
 
-    state->s_ehdr = ehdr;
-    return Elf_OK;
+    *errptr = errno;
+    return ehdr;
+
+    CLEANUP: {
+        free(ehdr);
+        *errptr = errno;
+        return NULL;
+    }
 }
 
 
-Elf_ErrNo Elf_read_shdrs(Elf_State * state) {
-    Elf32_Ehdr * ehdr = state->s_ehdr;
-
-    if (ehdr == NULL) {
-        return Elf_NEED_EHDR;
-    }
+Elf32_Shdr * Elf_read_shdrs(int fd, Elf32_Ehdr * ehdr, Elf_ErrNo * errptr) {
+    Elf_ErrNo errno = Elf_OK;
+    Elf32_Shdr * shdrs = NULL;
 
     Elf32_Off shoff = ehdr->e_shoff;
 
     if (shoff == 0) {
-        return Elf_EHDR_BAD_SHOFF;
+        errno = Elf_EHDR_BAD_SHOFF;
+        goto CLEANUP;
     }
 
-    int fd = state->s_fd;
-
     if (lseek(fd, shoff, SEEK_SET) != shoff) {
-        return Elf_BAD_READ;
+        errno = Elf_BAD_READ;
+        goto CLEANUP;
     }
 
     if (ehdr->e_shentsize != sizeof(Elf32_Shdr)) {
-        return Elf_EHDR_BAD_SHENTSIZE;
+        errno = Elf_EHDR_BAD_SHENTSIZE;
+        goto CLEANUP;
     }
 
     Elf32_Word shsize = ehdr->e_shnum * ehdr->e_shentsize;
-    Elf32_Shdr * shdrs = malloc(shsize);
+    shdrs = malloc(shsize);
 
     if (shdrs == NULL) {
-        return Elf_BAD_ALLOC;
+        errno = Elf_BAD_ALLOC;
+        goto CLEANUP;
     }
 
     if (read(fd, shdrs, shsize) != shsize) {
-        free(shdrs);
-        return Elf_BAD_READ;
+        errno = Elf_BAD_READ;
+        goto CLEANUP;
     }
 
-    state->s_shdrs = shdrs;
-    return Elf_OK;
+    *errptr = errno;
+    return shdrs;
+
+    CLEANUP: {
+        free(shdrs);
+        *errptr = errno;
+        return NULL;
+    }
 }
 
 
-Elf_ErrNo Elf_read_shstrtab(Elf_State * state) {
-    Elf32_Ehdr * ehdr = state->s_ehdr;
-    if (ehdr == NULL) {
-        return Elf_NEED_EHDR;
+void * Elf_read_section(int fd, Elf32_Shdr * shdr, Elf_ErrNo * errptr) {
+    Elf_ErrNo errno = Elf_OK;
+    void * buf = malloc(shdr->sh_size);
+
+    if (buf == NULL) {
+        errno = Elf_BAD_ALLOC;
+        goto CLEANUP;
     }
 
-    Elf32_Shdr * shdrs = state->s_shdrs;
-    if (shdrs == NULL) {
-        return Elf_NEED_SHDRS;
+    if (lseek(fd, shdr->sh_offset, SEEK_SET) == -1) {
+        errno = Elf_BAD_READ;
+        goto CLEANUP;
     }
 
-    Elf32_Shdr * shstrtab = &state->s_shdrs[ehdr->e_shstrndx];
-    Elf32_Shdr * shstrtab_cp = malloc(sizeof(Elf32_Shdr));
-
-    if (shstrtab_cp == NULL) {
-        return Elf_BAD_ALLOC;
+    if (read(fd, buf, shdr->sh_size) != shdr->sh_size) {
+        errno = Elf_BAD_READ;
+        goto CLEANUP;
     }
 
-    memcpy(shstrtab_cp, shstrtab, sizeof(Elf32_Shdr));
+    *errptr = errno;
+    return buf;
 
-    state->s_shstrtab = shstrtab_cp;
-    return Elf_OK;
+    CLEANUP: {
+        free(buf);
+        *errptr = errno;
+        return NULL;
+    }
 }
 
 
